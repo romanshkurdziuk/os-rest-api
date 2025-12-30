@@ -50,6 +50,8 @@ endif()
 add_executable(todo_server 
     src/main.cpp 
     src/model.hpp
+    src/storage.hpp  
+    src/storage.cpp   
 )
 
 # 4. ВРУЧНУЮ указываем пути к заголовкам (Include Directories)
