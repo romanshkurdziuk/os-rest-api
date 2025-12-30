@@ -4,46 +4,89 @@
 #include <mutex>
 
 // --- IN-MEMORY DATABASE ---
-// Используем map для быстрого поиска по ID.
-// Защищаем данные мьютексом, так как Crow многопоточный!
 std::map<int, TodoApp::Task> tasks_db;
 std::mutex db_mutex;
 int next_id = 1;
 
-// Функция для заполнения тестовыми данными (Mock Data)
 void populate_test_data() {
     std::lock_guard<std::mutex> lock(db_mutex);
-    tasks_db[next_id] = {next_id++, "Buy Milk", "3.2% fat", "todo"};
-    tasks_db[next_id] = {next_id++, "Learn C++", "Complete OS Colloquium", "in_progress"};
+    
+    // Явно создаем задачи с конкретными ID
+    tasks_db[1] = {1, "Buy Milk", "3.2% fat", "todo"};
+    tasks_db[2] = {2, "Learn C++", "Complete OS Colloquium", "in_progress"};
+    
+    // Обновляем счетчик для будущих задач (которые добавим через POST)
+    next_id = 3;
 }
 
 int main() {
-    // Заполним базу парой задач
     populate_test_data();
 
     crow::SimpleApp app;
 
-    // --- ENDPOINTS ---
-
-    // 1. GET /tasks - Получить все задачи
+    // ---------------------------------------------------------
+    // 1. GET /tasks (Получить список)
+    // ---------------------------------------------------------
     CROW_ROUTE(app, "/tasks")
     .methods(crow::HTTPMethod::GET)
     ([](){
-        // Блокируем доступ к БД на время чтения
         std::lock_guard<std::mutex> lock(db_mutex);
-
-        // Создаем JSON-массив
         std::vector<crow::json::wvalue> result_list;
-        
         for (const auto& [id, task] : tasks_db) {
             result_list.push_back(task.to_json());
         }
-
-        // Crow автоматически превратит vector<wvalue> в JSON-список
         crow::json::wvalue final_json;
         final_json = std::move(result_list);
-        
         return final_json;
+    });
+
+    // ---------------------------------------------------------
+    // 2. GET /tasks/{id} (Получить одну задачу)
+    // ---------------------------------------------------------
+    // <int> означает, что URL должен содержать число
+    CROW_ROUTE(app, "/tasks/<int>")
+    .methods(crow::HTTPMethod::GET)
+    ([](int id){
+        std::lock_guard<std::mutex> lock(db_mutex);
+        
+        if (tasks_db.count(id) == 0) {
+            return crow::response(404, "Task not found");
+        }
+
+        return crow::response(tasks_db[id].to_json());
+    });
+
+    // ---------------------------------------------------------
+    // 3. POST /tasks (Создать задачу)
+    // ---------------------------------------------------------
+    CROW_ROUTE(app, "/tasks")
+    .methods(crow::HTTPMethod::POST)
+    ([](const crow::request& req){
+        // Парсим JSON из тела запроса
+        auto x = crow::json::load(req.body);
+        
+        if (!x) {
+            return crow::response(400, "Invalid JSON");
+        }
+
+        // Блокируем БД для записи
+        std::lock_guard<std::mutex> lock(db_mutex);
+        
+        // Создаем новую задачу
+        TodoApp::Task new_task;
+        new_task.id = next_id++;
+        
+        // Безопасно извлекаем данные (если полей нет, будут пустые строки)
+        if (x.has("title")) new_task.title = x["title"].s();
+        if (x.has("description")) new_task.description = x["description"].s();
+        if (x.has("status")) new_task.status = x["status"].s();
+        else new_task.status = "todo"; // Значение по умолчанию
+
+        // Сохраняем
+        tasks_db[new_task.id] = new_task;
+
+        // Возвращаем 201 Created и созданный объект
+        return crow::response(201, new_task.to_json());
     });
 
     // Запуск сервера
