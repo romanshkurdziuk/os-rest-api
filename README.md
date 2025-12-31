@@ -1,131 +1,114 @@
-# C++ REST API (Todo List)
+# C++ REST API (Todo List Service)
 
-Профессиональная реализация RESTful API для управления списком задач. Проект разработан на C++17 с использованием высокопроизводительного микрофреймворка **Crow** и системы сборки **CMake**.
+![C++](https://img.shields.io/badge/C++-17-blue.svg?style=flat&logo=c%2B%2B)
+![Platform](https://img.shields.io/badge/Platform-Windows-0078D6.svg?style=flat&logo=windows)
+![Build](https://img.shields.io/badge/Build-CMake-064F8C.svg?style=flat&logo=cmake)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-## 🚀 Функциональность
+A high-performance RESTful API for task management developed in C++17. The project implements a layered architecture (MVC) using the Crow microframework and features persistent data storage with thread-safe operations.
 
-Реализован полный **CRUD** (Create, Read, Update, Delete) интерфейс. Данные хранятся в памяти (In-Memory Database) с защитой потоков (Thread-Safe).
+## Key Features
 
-| Метод | Эндпоинт | Описание |
-|-------|----------|----------|
-| **GET** | `/tasks` | Получить список всех задач |
-| **POST** | `/tasks` | Создать новую задачу |
-| **GET** | `/tasks/{id}` | Получить одну задачу по ID |
-| **PUT** | `/tasks/{id}` | Обновить данные задачи |
-| **DELETE** | `/tasks/{id}` | Удалить задачу |
+*   **Full CRUD Operations**: Create, Read, Update, and Delete tasks via HTTP methods.
+*   **Data Persistence**: Tasks are automatically saved to `db.json` and loaded upon server restart.
+*   **Input Validation**: Strict validation of incoming JSON data (status codes, required fields) to ensure data integrity.
+*   **Thread Safety**: Implementation of `std::mutex` for safe concurrent access to the storage.
+*   **Dependency Management**: Automated dependency fetching (Crow, Asio) via CMake `FetchContent`.
+*   **Separation of Concerns**: Logic is decoupled into Model, Storage, and Routing layers.
 
-### 📄 Формат данных (JSON)
+## API Reference
 
-**Запрос (POST/PUT):**
-```json
-{
-  "title": "Buy Milk",
-  "description": "3.2% fat",
-  "status": "todo"
-}
-```
+The API runs on port `18080` by default.
 
-**Ответ (GET):**
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/tasks` | Retrieve a list of all tasks. |
+| `POST` | `/tasks` | Create a new task. |
+| `GET` | `/tasks/{id}` | Retrieve a specific task by ID. |
+| `PUT` | `/tasks/{id}` | Update an existing task (partial updates allowed). |
+| `DELETE` | `/tasks/{id}` | Remove a task permanently. |
+
+### Data Model
+
+**Task Object Structure:**
+
 ```json
 {
   "id": 1,
-  "title": "Buy Milk",
-  "description": "3.2% fat",
-  "status": "todo"
+  "title": "Complete Project",
+  "description": "Write documentation and unit tests",
+  "status": "in_progress"
 }
 ```
 
----
+*Valid status values:* `todo`, `in_progress`, `done`.
 
-## 🛠 Технологический стек
+## Technology Stack
 
-*   **Язык**: C++17
-*   **Веб-сервер**: [Crow](https://github.com/CrowCpp/Crow) (Fast Microframework)
-*   **Сетевой движок**: Asio (Standalone, без Boost)
-*   **Сборка**: CMake 3.14+
-*   **Архитектура**: REST API, MVC Pattern
-*   **Инструменты**: VS Code, Git
+*   **Language**: C++17
+*   **Web Framework**: [Crow](https://github.com/CrowCpp/Crow) (v1.2.0)
+*   **Networking**: Asio (Standalone)
+*   **Build System**: CMake 3.14+
+*   **Format**: JSON
 
----
+## Installation and Build
 
-## 📦 Установка и Сборка
+This project requires a C++ compiler (MSVC, GCC, or Clang) and CMake installed.
 
-Проект использует `FetchContent` для автоматической загрузки всех зависимостей (вам не нужно устанавливать библиотеки вручную).
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/YOUR_USERNAME/todo_api_cpp.git
+    cd todo_api_cpp
+    ```
 
-### Предварительные требования
-*   Компилятор C++ (MSVC 2019+, GCC, Clang)
-*   CMake (версия 3.14 или выше)
-*   Git
+2.  **Configure the project:**
+    ```bash
+    mkdir build
+    cd build
+    cmake ..
+    ```
 
-### Пошаговая инструкция
+3.  **Build:**
+    ```bash
+    cmake --build .
+    ```
 
-1. **Клонирование репозитория**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/todo_api_cpp.git
-   cd todo_api_cpp
-   ```
+4.  **Run:**
+    *   Windows: `.\Debug\todo_server.exe`
+    *   Linux/macOS: `./todo_server`
 
-2. **Создание папки сборки**
-   ```bash
-   mkdir build
-   cd build
-   ```
+The server will start at `http://localhost:18080`.
 
-3. **Конфигурация и Сборка**
-   ```bash
-   cmake ..
-   cmake --build .
-   ```
+## Usage Examples (PowerShell)
 
-4. **Запуск сервера**
-   *   **Windows**:
-       ```powershell
-       .\Debug\todo_server.exe
-       ```
-   *   **Linux / macOS**:
-       ```bash
-       ./todo_server
-       ```
-
-Сервер запустится по адресу: `http://localhost:18080`
-
----
-
-## 🧪 Тестирование API
-
-Вы можете использовать **Postman**, **curl** или **PowerShell**.
-
-### Примеры для PowerShell (Windows)
-
-**1. Создать задачу (POST)**
+**Create a Task:**
 ```powershell
 Invoke-RestMethod -Method Post -Uri "http://localhost:18080/tasks" `
   -ContentType "application/json" `
-  -Body '{"title": "Learn C++", "description": "Master REST API", "status": "todo"}'
+  -Body '{"title": "Refactor Code", "description": "Separate storage logic", "status": "todo"}'
 ```
 
-**2. Получить список (GET)**
+**Get All Tasks:**
 ```powershell
 Invoke-RestMethod -Uri "http://localhost:18080/tasks"
 ```
 
-**3. Обновить задачу (PUT)**
+**Update Status:**
 ```powershell
 Invoke-RestMethod -Method Put -Uri "http://localhost:18080/tasks/1" `
   -ContentType "application/json" `
   -Body '{"status": "done"}'
 ```
 
-**4. Удалить задачу (DELETE)**
+**Delete Task:**
 ```powershell
 Invoke-RestMethod -Method Delete -Uri "http://localhost:18080/tasks/1"
 ```
 
----
+## Project Structure
 
-## 📝 Особенности реализации
-
-*   **Thread Safety**: Доступ к данным защищен `std::mutex`, что позволяет серверу обрабатывать запросы параллельно.
-*   **Modern CMake**: Использование `FetchContent` для управления зависимостями.
-*   **Windows Compatibility**: Решена проблема конфликта макроса `DELETE` в MSVC.
-*   **Clean Code**: Разделение на слои (Model в `model.hpp`, Logic в `main.cpp`).
+*   `src/main.cpp` - Entry point and HTTP routing configuration.
+*   `src/model.hpp` - Data structures and JSON serialization logic.
+*   `src/storage.hpp` - Interface for the persistence layer.
+*   `src/storage.cpp` - Implementation of file I/O operations and database management.
+*   `CMakeLists.txt` - Build configuration and dependency management.
